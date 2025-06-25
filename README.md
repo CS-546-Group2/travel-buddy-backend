@@ -9,6 +9,7 @@ This is the backend service for **Travel Buddy**, an AI-powered travel planning 
 - **Node.js**
 - **Express.js**
 - **MongoDB** w/ **Mongoose**
+- **CORS** for frontend-backend communication
 
 ---
 
@@ -30,32 +31,60 @@ npm install
 ### 3. Start the server
 
 ```bash
-npm run dev
+nodemon app.js
 ```
 
 > Runs on [http://localhost:5000](http://localhost:5000) by default.
 
 ---
 
-## 📦 API Endpoints (Preview)
+## 🌐 API Connectivity
 
-| Route | Method | Description |
-|-------|--------|-------------|
-| `/api/users/signup` | POST | Create user |
-| `/api/users/login` | POST | Login user |
-| `/api/trips/` | GET/POST | Get or create trips |
-| `/api/trips/:id` | PUT/DELETE | Update or delete trip |
+The backend provides endpoints that the frontend connects to. Example:
 
-More in progress...
+```
+GET /api/ping
+```
+
+Returns a confirmation that the backend is reachable.
 
 ---
 
-## 👥 Branching Model
+## 🧱 Planned API Endpoints
+
+| Route               | Method | Description            |
+|--------------------|--------|------------------------|
+| `/api/ping`        | GET    | Ping the backend       |
+| `/api/users/login` | POST   | User login (future)    |
+| `/api/users/signup`| POST   | User signup (future)   |
+| `/api/trips`       | GET    | Get all user trips     |
+| `/api/trips`       | POST   | Create a new trip      |
+
+---
+
+## 👥 Branching Strategy
 
 - `main` – protected, production-ready
-- `develop` – default base for PRs
-- `users/your-branch-name` – for feature work
+- `develop` – active development branch
+- `users/<your-name>/<feature>` – for all feature development
 
-> PRs must go into `develop` and require at least one approval.
+### 🛡 PR Rules
+
+- **No direct merges into `main`**
+- All PRs must target `develop`
+- PRs require **code review and approval**
+
+---
+
+## 🛠 Example Folder Structure
+
+```
+travel-buddy-backend/
+├── app.js
+├── routes/
+│   ├── users.js
+│   └── trips.js
+└── package.json
+```
 
 For issues or questions, open a GitHub Issue or contact the team on Slack.

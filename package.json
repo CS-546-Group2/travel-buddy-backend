@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/CS-546-Group2/travel-buddy-backend#readme",
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^5.1.0"
   },
   "devDependencies": {
