@@ -31,7 +31,7 @@ npm install
 ### 3. Start the server
 
 ```bash
-nodemon app.js
+npm run dev or npm run start
 ```
 
 > Runs on [http://localhost:5000](http://localhost:5000) by default.

@@ -1,0 +1,10 @@
+[
+  {
+    "_id": "c1",
+    "tripId": "t1",
+    "invitedUserId": "733f66bf-ef52-4cee-9904-011b38b475e0",
+    "status": "accepted",
+    "role": "co-traveler",
+    "message": "Let's plan together!"
+  }
+] 

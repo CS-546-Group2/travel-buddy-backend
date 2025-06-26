@@ -1,0 +1,32 @@
+[
+  {
+    "_id": "733f66bf-ef52-4cee-9904-011b38b475e0",
+    "firstName": "Alice",
+    "lastName": "Smith",
+    "email": "alice.smith@example.com",
+    "username": "asmith",
+    "age": 26,
+    "hashedPassword": "Smith123",
+    "travelPreferences": {
+      "budgetRange": "low",
+      "travelStyle": "relaxed",
+      "interests": ["local food", "hiking", "festivals"]
+    },
+    "createdAt": "2025-05-28T02:31:06.827853Z"
+  },
+  {
+    "_id": "8b117422-acc6-4bfc-9b50-6ce1c11dea7b",
+    "firstName": "Bob",
+    "lastName": "Johnson",
+    "email": "bob.johnson@example.com",
+    "username": "bjohnson",
+    "age": 40,
+    "hashedPassword": "Jhonson123",
+    "travelPreferences": {
+      "budgetRange": "high",
+      "travelStyle": "cultural",
+      "interests": ["hiking", "photography", "local food"]
+    },
+    "createdAt": "2025-06-05T02:31:06.828575Z"
+  }
+]
