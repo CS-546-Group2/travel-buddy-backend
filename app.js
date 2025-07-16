@@ -1,7 +1,9 @@
-const express = require('express');
-const cors = require('cors');
-require('dotenv').config();
-const connectDB = require('./config/database');
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import connectDB from './config/database.js';
+
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -10,17 +12,21 @@ const PORT = process.env.PORT || 3001;
 connectDB();
 
 // Route imports
-const tripRoutes = require('./Routes/trips');
-const userRoutes = require('./Routes/users');
-const collabRoutes = require('./Routes/collaboration'); // assuming filename is collaboration.js
+import tripRoutes from './Routes/trips.js';
+import userRoutes from './Routes/users.js';
+import collabRoutes from './Routes/collaboration.js';
 
-// Middleware - More permissive CORS for development
-app.use(cors({
-  origin: true,
+// CORS configuration
+const corsOptions = {
+  origin: process.env.ALLOWED_ORIGINS 
+    ? process.env.ALLOWED_ORIGINS.split(',') 
+    : ['http://localhost:8080', 'http://localhost:3000'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
-}));
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // ✅ Health check
@@ -36,6 +42,6 @@ app.use('/api/collaboration', collabRoutes);
 
 // ✅ Server listener
 app.listen(PORT, () => {
-  console.log(`🚀 Backend listening on http://localhost:${PORT}`);
+  console.log(`🚀 Backend listening on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
 });

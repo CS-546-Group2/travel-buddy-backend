@@ -1,9 +1,10 @@
-const express = require('express');
+import express from 'express';
+import User from '../models/User.js';
+
 const router = express.Router();
-const User = require('../models/User');
 
 // TODO: Add JWT authentication middleware
-// const auth = require('../middleware/auth');
+// import auth from '../middleware/auth.js';
 
 // Get user by ID
 router.get('/:userId', async (req, res) => {
@@ -191,4 +192,4 @@ router.get('/search/:query', async (req, res) => {
 // - Email verification
 // - Profile picture upload
 
-module.exports = router;
+export default router;
