@@ -1,10 +1,11 @@
-const express = require('express');
+import express from 'express';
+import Trip from '../models/Trip.js';
+import User from '../models/User.js';
+
 const router = express.Router();
-const Trip = require('../models/Trip');
-const User = require('../models/User');
 
 // TODO: Add authentication middleware
-// const auth = require('../middleware/auth');
+// import auth from '../middleware/auth.js';
 
 // Get all trips for a user
 router.get('/user/:userId', async (req, res) => {
@@ -255,4 +256,4 @@ router.get('/stats/:userId', async (req, res) => {
 //   // Generate travel tips
 // });
 
-module.exports = router;
+export default router;

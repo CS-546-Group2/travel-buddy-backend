@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const activitySchema = new mongoose.Schema({
   day: {
@@ -304,4 +304,4 @@ tripSchema.methods.getSummary = function() {
   };
 };
 
-module.exports = mongoose.model('Trip', tripSchema); 
+export default mongoose.model('Trip', tripSchema); 

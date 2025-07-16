@@ -1,11 +1,12 @@
-const express = require('express');
+import express from 'express';
+import Collaboration from '../models/Collaboration.js';
+import Trip from '../models/Trip.js';
+import User from '../models/User.js';
+
 const router = express.Router();
-const Collaboration = require('../models/Collaboration');
-const Trip = require('../models/Trip');
-const User = require('../models/User');
 
 // TODO: Add authentication middleware
-// const auth = require('../middleware/auth');
+// import auth from '../middleware/auth.js';
 
 // Get all collaborations for a user
 router.get('/user/:userId', async (req, res) => {
@@ -255,4 +256,4 @@ router.get('/stats/:userId', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

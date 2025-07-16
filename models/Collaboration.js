@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const collaborationSchema = new mongoose.Schema({
   tripId: {
@@ -113,4 +113,4 @@ collaborationSchema.pre('save', function(next) {
   next();
 });
 
-module.exports = mongoose.model('Collaboration', collaborationSchema); 
+export default mongoose.model('Collaboration', collaborationSchema); 
