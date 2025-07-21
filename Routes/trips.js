@@ -1,6 +1,7 @@
 import express from 'express';
 import Trip from '../models/Trip.js';
 import User from '../models/User.js';
+import logger from '../utils/logger.js';
 
 const router = express.Router();
 
@@ -12,6 +13,12 @@ router.get('/user/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
     const { status, search } = req.query;
+
+    logger.debug('Fetching user trips', { 
+      userId,
+      status,
+      search
+    });
 
     let query = { userId, isDeleted: false };
 
@@ -30,11 +37,22 @@ router.get('/user/:userId', async (req, res) => {
 
     const trips = await Trip.find(query)
       .sort({ startDate: 1 })
-      .populate('userId', 'firstName lastName username'); 
+      .populate('userId', 'firstName lastName username');
+
+    logger.info('Trips fetched successfully', { 
+      userId,
+      tripCount: trips.length,
+      status,
+      search 
+    });
 
     res.status(200).json(trips);
   } catch (error) {
-    console.error('Error fetching trips:', error);
+    logger.error('Error fetching trips', { 
+      userId: req.params.userId,
+      error: error.message,
+      stack: error.stack
+    });
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -42,16 +60,28 @@ router.get('/user/:userId', async (req, res) => {
 // Get a specific trip
 router.get('/:tripId', async (req, res) => {
   try {
+    logger.debug('Fetching trip details', { tripId: req.params.tripId });
+
     const trip = await Trip.findById(req.params.tripId)
       .populate('userId', 'firstName lastName username');
 
     if (!trip || trip.isDeleted) {
+      logger.warn('Trip not found', { tripId: req.params.tripId });
       return res.status(404).json({ error: 'Trip not found' });
     }
 
+    logger.info('Trip fetched successfully', { 
+      tripId: trip._id,
+      userId: trip.userId._id 
+    });
+
     res.status(200).json(trip);
   } catch (error) {
-    console.error('Error fetching trip:', error);
+    logger.error('Error fetching trip', { 
+      tripId: req.params.tripId,
+      error: error.message,
+      stack: error.stack
+    });
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -69,8 +99,15 @@ router.post('/', async (req, res) => {
       preferences
     } = req.body;
 
+    logger.debug('Creating new trip', { 
+      userId,
+      tripName,
+      destination
+    });
+
     // Validate required fields
     if (!userId || !tripName || !destination || !startDate || !endDate || !budget) {
+      logger.warn('Trip creation failed - missing required fields', { userId });
       return res.status(400).json({ error: 'All required fields must be provided' });
     }
 
@@ -79,10 +116,19 @@ router.post('/', async (req, res) => {
     const end = new Date(endDate);
     
     if (start >= end) {
+      logger.warn('Trip creation failed - invalid dates', { 
+        userId,
+        startDate,
+        endDate 
+      });
       return res.status(400).json({ error: 'End date must be after start date' });
     }
 
     if (start < new Date()) {
+      logger.warn('Trip creation failed - past start date', { 
+        userId,
+        startDate 
+      });
       return res.status(400).json({ error: 'Start date cannot be in the past' });
     }
 
@@ -104,12 +150,19 @@ router.post('/', async (req, res) => {
 
     await newTrip.save();
 
-    // TODO: Trigger AI itinerary generation
-    // await generateItinerary(newTrip._id);
+    logger.info('New trip created successfully', { 
+      tripId: newTrip._id,
+      userId: newTrip.userId,
+      destination: newTrip.destination
+    });
 
     res.status(201).json(newTrip);
   } catch (error) {
-    console.error('Error creating trip:', error);
+    logger.error('Error creating trip', { 
+      userId: req.body.userId,
+      error: error.message,
+      stack: error.stack
+    });
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -119,6 +172,11 @@ router.put('/:tripId', async (req, res) => {
   try {
     const { tripId } = req.params;
     const updateData = req.body;
+
+    logger.debug('Updating trip', { 
+      tripId,
+      updateFields: Object.keys(updateData)
+    });
 
     // Remove fields that shouldn't be updated directly
     delete updateData._id;
@@ -132,17 +190,23 @@ router.put('/:tripId', async (req, res) => {
     );
 
     if (!updatedTrip || updatedTrip.isDeleted) {
+      logger.warn('Trip update failed - trip not found', { tripId });
       return res.status(404).json({ error: 'Trip not found' });
     }
 
-    // TODO: Trigger AI re-generation if preferences changed
-    // if (updateData.preferences) {
-    //   await regenerateItinerary(tripId);
-    // }
+    logger.info('Trip updated successfully', { 
+      tripId: updatedTrip._id,
+      userId: updatedTrip.userId,
+      updatedFields: Object.keys(updateData)
+    });
 
     res.status(200).json(updatedTrip);
   } catch (error) {
-    console.error('Error updating trip:', error);
+    logger.error('Error updating trip', { 
+      tripId: req.params.tripId,
+      error: error.message,
+      stack: error.stack
+    });
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -150,6 +214,8 @@ router.put('/:tripId', async (req, res) => {
 // Delete a trip (soft delete)
 router.delete('/:tripId', async (req, res) => {
   try {
+    logger.debug('Deleting trip', { tripId: req.params.tripId });
+
     const trip = await Trip.findByIdAndUpdate(
       req.params.tripId,
       { isDeleted: true },
@@ -157,12 +223,24 @@ router.delete('/:tripId', async (req, res) => {
     );
 
     if (!trip) {
+      logger.warn('Trip deletion failed - trip not found', { 
+        tripId: req.params.tripId 
+      });
       return res.status(404).json({ error: 'Trip not found' });
     }
 
+    logger.info('Trip deleted successfully', { 
+      tripId: trip._id,
+      userId: trip.userId
+    });
+
     res.status(200).json({ message: 'Trip deleted successfully' });
   } catch (error) {
-    console.error('Error deleting trip:', error);
+    logger.error('Error deleting trip', { 
+      tripId: req.params.tripId,
+      error: error.message,
+      stack: error.stack
+    });
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -172,6 +250,11 @@ router.get('/search/:query', async (req, res) => {
   try {
     const { query } = req.params;
     const { userId } = req.query;
+
+    logger.debug('Searching trips', { 
+      query,
+      userId 
+    });
 
     let searchQuery = {
       isDeleted: false,
@@ -190,9 +273,20 @@ router.get('/search/:query', async (req, res) => {
       .sort({ startDate: 1 })
       .limit(20);
 
+    logger.info('Trip search completed', { 
+      query,
+      userId,
+      resultCount: trips.length
+    });
+
     res.status(200).json(trips);
   } catch (error) {
-    console.error('Error searching trips:', error);
+    logger.error('Error searching trips', { 
+      query: req.params.query,
+      userId: req.query.userId,
+      error: error.message,
+      stack: error.stack
+    });
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -201,6 +295,8 @@ router.get('/search/:query', async (req, res) => {
 router.get('/stats/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
+
+    logger.debug('Fetching trip statistics', { userId });
 
     const stats = await Trip.aggregate([
       { $match: { userId: userId, isDeleted: false } },
@@ -229,6 +325,18 @@ router.get('/stats/:userId', async (req, res) => {
       }
     ]);
 
+    logger.info('Trip statistics fetched successfully', { 
+      userId,
+      stats: stats[0] || {
+        totalTrips: 0,
+        totalBudget: 0,
+        avgBudget: 0,
+        upcomingTrips: 0,
+        ongoingTrips: 0,
+        completedTrips: 0
+      }
+    });
+
     res.status(200).json(stats[0] || {
       totalTrips: 0,
       totalBudget: 0,
@@ -238,7 +346,11 @@ router.get('/stats/:userId', async (req, res) => {
       completedTrips: 0
     });
   } catch (error) {
-    console.error('Error fetching trip stats:', error);
+    logger.error('Error fetching trip stats', { 
+      userId: req.params.userId,
+      error: error.message,
+      stack: error.stack
+    });
     res.status(500).json({ error: 'Server error' });
   }
 });
