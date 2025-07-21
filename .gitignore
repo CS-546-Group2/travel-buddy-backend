@@ -4,9 +4,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Env config
-.env
-
 # Logs
 logs/
 *.log
