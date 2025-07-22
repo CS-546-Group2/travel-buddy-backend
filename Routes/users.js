@@ -1,5 +1,6 @@
 import express from 'express';
 import User from '../models/User.js';
+import logger from '../utils/logger.js';
 
 const router = express.Router();
 
@@ -9,15 +10,23 @@ const router = express.Router();
 // Get user by ID
 router.get('/:userId', async (req, res) => {
   try {
+    logger.debug('Fetching user by ID', { userId: req.params.userId });
+    
     const user = await User.findById(req.params.userId).select('-hashedPassword');
     
     if (!user) {
+      logger.warn('User not found', { userId: req.params.userId });
       return res.status(404).json({ error: 'User not found' });
     }
     
+    logger.info('User fetched successfully', { userId: user._id });
     res.status(200).json(user);
   } catch (error) {
-    console.error('Error fetching user:', error);
+    logger.error('Error fetching user', { 
+      userId: req.params.userId,
+      error: error.message,
+      stack: error.stack
+    });
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -26,9 +35,11 @@ router.get('/:userId', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
+    logger.debug('Login attempt', { username });
 
     // Validate input
     if (!username || !password) {
+      logger.warn('Login failed - missing credentials', { username });
       return res.status(400).json({ error: 'Username and password are required' });
     }
 
@@ -41,35 +52,39 @@ router.post('/login', async (req, res) => {
     });
 
     if (!user) {
+      logger.warn('Login failed - invalid credentials', { username });
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     // Check if user is active
     if (!user.isActive) {
+      logger.warn('Login failed - account deactivated', { userId: user._id });
       return res.status(401).json({ error: 'Account is deactivated' });
     }
 
     // Verify password
     const isValidPassword = await user.comparePassword(password);
     if (!isValidPassword) {
+      logger.warn('Login failed - invalid password', { userId: user._id });
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // TODO: Generate JWT token
-    // const token = generateToken(user._id);
-
+    logger.info('User logged in successfully', { userId: user._id });
     res.status(200).json({
-      user: user.toJSON(),
-      // token: token
+      user: user.toJSON()
     });
 
   } catch (error) {
-    console.error('Login error:', error);
+    logger.error('Login error', { 
+      username: req.body.username,
+      error: error.message,
+      stack: error.stack
+    });
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-// User signup with questionnaire
+// User signup
 router.post('/signup', async (req, res) => {
   try {
     const {
@@ -82,20 +97,25 @@ router.post('/signup', async (req, res) => {
       travelPreferences
     } = req.body;
 
+    logger.debug('New user signup attempt', { username, email });
+
     // Validate required fields
     if (!firstName || !lastName || !email || !username || !password) {
+      logger.warn('Signup failed - missing required fields', { username, email });
       return res.status(400).json({ error: 'All required fields must be provided' });
     }
 
     // Check if username already exists
     const existingUsername = await User.findOne({ username });
     if (existingUsername) {
+      logger.warn('Signup failed - username exists', { username });
       return res.status(409).json({ error: 'Username already exists' });
     }
 
     // Check if email already exists
     const existingEmail = await User.findOne({ email });
     if (existingEmail) {
+      logger.warn('Signup failed - email exists', { email });
       return res.status(409).json({ error: 'Email already exists' });
     }
 
@@ -105,7 +125,7 @@ router.post('/signup', async (req, res) => {
       lastName,
       email,
       username,
-      hashedPassword: password, // Will be hashed by middleware
+      hashedPassword: password,
       age: age || null,
       travelPreferences: travelPreferences || {
         budgetRange: 'mid-range',
@@ -119,17 +139,22 @@ router.post('/signup', async (req, res) => {
     });
 
     await newUser.save();
-
-    // TODO: Generate JWT token
-    // const token = generateToken(newUser._id);
+    logger.info('New user created successfully', { 
+      userId: newUser._id,
+      username: newUser.username 
+    });
 
     res.status(201).json({
-      user: newUser.toJSON(),
-      // token: token
+      user: newUser.toJSON()
     });
 
   } catch (error) {
-    console.error('Signup error:', error);
+    logger.error('Signup error', { 
+      username: req.body.username,
+      email: req.body.email,
+      error: error.message,
+      stack: error.stack
+    });
     
     if (error.code === 11000) {
       return res.status(409).json({ error: 'Username or email already exists' });
