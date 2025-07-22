@@ -113,11 +113,24 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'All required fields must be provided' });
     }
 
-    if (startDate >= endDate) {
+    // Validate dates
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    if (start >= end) {
+      logger.warn("Trip creation failed - invalid dates", {
+        userId,
+        startDate,
+        endDate,
+      });
       return res.status(400).json({ error: 'End date must be after start date' });
     }
 
     if (startDate < new Date()) {
+      logger.warn("Trip creation failed - past start date", {
+        userId,
+        startDate,
+      });
       return res.status(400).json({ error: 'Start date cannot be in the past' });
     }
 
@@ -126,8 +139,8 @@ router.post('/', async (req, res) => {
       userId,
       tripName,
       destination,
-      startDate,
-      endDate,
+      startDate: start,
+      endDate: end,
       duration,
       budget,
       status,
