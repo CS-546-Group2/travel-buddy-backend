@@ -95,7 +95,9 @@ router.post('/', async (req, res) => {
       destination,
       startDate,
       endDate,
+      duration,
       budget,
+      status,
       preferences
     } = req.body;
 
@@ -116,18 +118,18 @@ router.post('/', async (req, res) => {
     const end = new Date(endDate);
     
     if (start >= end) {
-      logger.warn('Trip creation failed - invalid dates', { 
+      logger.warn("Trip creation failed - invalid dates", {
         userId,
         startDate,
-        endDate 
+        endDate,
       });
       return res.status(400).json({ error: 'End date must be after start date' });
     }
 
-    if (start < new Date()) {
-      logger.warn('Trip creation failed - past start date', { 
+    if (startDate < new Date()) {
+      logger.warn("Trip creation failed - past start date", {
         userId,
-        startDate 
+        startDate,
       });
       return res.status(400).json({ error: 'Start date cannot be in the past' });
     }
@@ -139,7 +141,9 @@ router.post('/', async (req, res) => {
       destination,
       startDate: start,
       endDate: end,
+      duration,
       budget,
+      status,
       preferences: preferences || {
         travelStyle: 'balanced',
         interests: [],
