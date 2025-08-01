@@ -1,36 +1,82 @@
 import express from 'express';
-import TravelPreference from '../models/TravelPreference.js';
+import mongoose from 'mongoose';
+import User from '../models/User.js';
+
+console.log('✅ preferences.js is ACTIVELY running');
 
 const router = express.Router();
 
-// POST /api/preferences
 router.post('/', async (req, res) => {
+  console.log('🔥 RAW BODY:', req.body);
+
+  const {
+    _id,
+    firstName,
+    lastName,
+    email,
+    username,
+    hashedPassword,
+    age,
+    createdAt,
+    travelPreferences = {}
+  } = req.body || {};
+
+  const {
+    budgetRange,
+    travelStyle,
+    accommodationStyle,
+    interests
+  } = travelPreferences;
+
+  const missing = [];
+  if (!_id || !mongoose.Types.ObjectId.isValid(_id)) missing.push('_id');
+  if (!firstName) missing.push('firstName');
+  if (!lastName) missing.push('lastName');
+  if (!email) missing.push('email');
+  if (!username) missing.push('username');
+  if (!hashedPassword) missing.push('hashedPassword');
+  if (age === undefined || isNaN(Number(age))) missing.push('age');
+  if (!createdAt) missing.push('createdAt');
+  if (!budgetRange) missing.push('travelPreferences.budgetRange');
+  if (!travelStyle) missing.push('travelPreferences.travelStyle');
+  if (!accommodationStyle) missing.push('travelPreferences.accommodationStyle');
+  if (!Array.isArray(interests)) missing.push('travelPreferences.interests');
+
+  if (missing.length > 0) {
+    console.log('❌ MISSING:', missing);
+    return res.status(400).json({ error: 'Missing required fields', missing });
+  }
+
+  const update = {
+    firstName,
+    lastName,
+    email,
+    username,
+    hashedPassword,
+    age: Number(age),
+    createdAt,
+    travelPreferences: {
+      budgetRange,
+      travelStyle,
+      accommodationStyle,
+      interests
+    },
+    updatedAt: new Date()
+  };
+
   try {
-    const { userId, travelStyle, budgetRange, accommodationStyle, interests } = req.body;
-
-    // Validate required fields
-    if (!userId || !travelStyle || !budgetRange || !accommodationStyle) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
-
-    // Upsert travel preferences for the user
-    const preference = await TravelPreference.findOneAndUpdate(
-      { userId },
-      {
-        $set: {
-          travelStyle,
-          budgetRange,
-          accommodationStyle,
-          interests: interests || []
-        }
-      },
-      { upsert: true, new: true }
+    const updatedUser = await User.findByIdAndUpdate(
+      _id,
+      { $set: update },
+      { new: true, upsert: true, runValidators: true }
     );
-
-    res.status(200).json({ message: 'Preferences saved successfully', data: preference });
+    return res.status(200).json({
+      message: 'User preferences saved successfully',
+      data: updatedUser
+    });
   } catch (err) {
-    console.error('[TravelPreferences] Error:', err);
-    res.status(500).json({ error: 'Failed to save preferences' });
+    console.error('[Preferences Update] Error:', err);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 });
 
