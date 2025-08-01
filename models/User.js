@@ -37,8 +37,6 @@ const userSchema = new mongoose.Schema({
     min: [13, 'Must be at least 13 years old'],
     max: [120, 'Invalid age']
   },
-  
-  // Travel Preferences Profile
   travelPreferences: {
     budgetRange: {
       type: String,
@@ -68,20 +66,14 @@ const userSchema = new mongoose.Schema({
       enum: ['wheelchair-accessible', 'mobility-assistance', 'visual-impairment', 'hearing-impairment', 'none']
     }]
   },
-  
-  // Profile completion tracking
   profileCompleted: {
     type: Boolean,
     default: false
   },
-  
-  // Account status
   isActive: {
     type: Boolean,
     default: true
   },
-  
-  // Timestamps
   createdAt: {
     type: Date,
     default: Date.now
@@ -94,18 +86,18 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index for search functionality
-userSchema.index({ 
-  firstName: 'text', 
-  lastName: 'text', 
-  email: 'text', 
-  username: 'text' 
+// 🔍 Full-text index for search
+userSchema.index({
+  firstName: 'text',
+  lastName: 'text',
+  email: 'text',
+  username: 'text'
 });
 
-// Password hashing middleware
+// 🔐 Auto-hash password before save
 userSchema.pre('save', async function(next) {
   if (!this.isModified('hashedPassword')) return next();
-  
+
   try {
     const salt = await bcrypt.genSalt(10);
     this.hashedPassword = await bcrypt.hash(this.hashedPassword, salt);
@@ -115,16 +107,16 @@ userSchema.pre('save', async function(next) {
   }
 });
 
-// Password comparison method
+// ✅ Password comparison
 userSchema.methods.comparePassword = async function(candidatePassword) {
   return bcrypt.compare(candidatePassword, this.hashedPassword);
 };
 
-// Remove password from JSON output
+// 🔒 Hide hashed password in JSON output
 userSchema.methods.toJSON = function() {
-  const user = this.toObject();
-  delete user.hashedPassword;
-  return user;
+  const obj = this.toObject();
+  delete obj.hashedPassword;
+  return obj;
 };
 
-export default mongoose.model('User', userSchema); 
+export default mongoose.model('User', userSchema);

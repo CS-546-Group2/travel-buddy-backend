@@ -7,6 +7,7 @@ console.log('✅ preferences.js is ACTIVELY running');
 const router = express.Router();
 
 router.post('/', async (req, res) => {
+  console.log('📥 POST /api/preferences');
   console.log('🔥 RAW BODY:', req.body);
 
   const {
@@ -28,6 +29,7 @@ router.post('/', async (req, res) => {
     interests
   } = travelPreferences;
 
+  // 🔎 Check for missing fields
   const missing = [];
   if (!_id || !mongoose.Types.ObjectId.isValid(_id)) missing.push('_id');
   if (!firstName) missing.push('firstName');
@@ -43,10 +45,11 @@ router.post('/', async (req, res) => {
   if (!Array.isArray(interests)) missing.push('travelPreferences.interests');
 
   if (missing.length > 0) {
-    console.log('❌ MISSING:', missing);
+    console.log('❌ MISSING FIELDS:', missing);
     return res.status(400).json({ error: 'Missing required fields', missing });
   }
 
+  // ✅ Prepare update payload
   const update = {
     firstName,
     lastName,
@@ -70,12 +73,15 @@ router.post('/', async (req, res) => {
       { $set: update },
       { new: true, upsert: true, runValidators: true }
     );
+
+    console.log('✅ Preferences updated for user:', updatedUser._id);
+
     return res.status(200).json({
       message: 'User preferences saved successfully',
       data: updatedUser
     });
   } catch (err) {
-    console.error('[Preferences Update] Error:', err);
+    console.error('❌ [Preferences Update] Error:', err);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
