@@ -2,6 +2,7 @@ import express from 'express';
 import Trip from '../models/Trip.js';
 import User from '../models/User.js';
 import logger from '../utils/logger.js';
+import gemini from '../integrations/gemini.js';
 
 const router = express.Router();
 
