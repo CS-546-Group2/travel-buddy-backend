@@ -1,6 +1,7 @@
+// Switched to Gemini because we can use the best model for a good price
 import { GoogleGenAI } from "@google/genai";
 
-// Configure the client
+// Initialize the client
 const ai = new GoogleGenAI({
   apiKey: process.env["GEMINI_API_KEY"],
 });
@@ -10,13 +11,11 @@ const groundingTool = {
   googleSearch: {},
 };
 
-// Configure generation settings
 const config = {
   tools: [groundingTool],
 };
 
 const query = async (message, webSearch) => {
-  // Make the request
   const response = await ai.models.generateContent({
     model: "gemini-2.5-pro",
     contents: message,
