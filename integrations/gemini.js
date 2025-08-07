@@ -1,9 +1,15 @@
-// Switched to Gemini because we can use the best model for a good price
+// Switched to Gemini because we can use the best model for a better price
 import { GoogleGenAI } from "@google/genai";
+import logger from "../utils/logger.js";
+
+const apiKey = process.env["GEMINI_API_KEY"];
+if (!apiKey) {
+  logger.fatal("No Gemini API key found in the env! Exiting...");
+}
 
 // Initialize the client
 const ai = new GoogleGenAI({
-  apiKey: process.env["GEMINI_API_KEY"],
+  apiKey: apiKey,
 });
 
 // Define the grounding tool
@@ -11,15 +17,15 @@ const groundingTool = {
   googleSearch: {},
 };
 
-const config = {
+const webConfig = {
   tools: [groundingTool],
 };
 
-const query = async (message, webSearch) => {
+const query = async (message, webSearch = true) => {
   const response = await ai.models.generateContent({
     model: "gemini-2.5-pro",
     contents: message,
-    ...(webSearch && { config }),
+    ...(webSearch && { webConfig }),
   });
 
   return response;
