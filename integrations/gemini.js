@@ -24,7 +24,7 @@ const webConfig = {
 const query = async (message, webSearch = true) => {
   const response = await ai.models.generateContent({
     model: "gemini-2.5-pro",
-    contents: message + "\nWeb search is enabled for this request if needed.",
+    contents: message,
     ...(webSearch && { webConfig }),
   });
 
