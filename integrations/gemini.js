@@ -4,7 +4,7 @@ import logger from "../utils/logger.js";
 
 const apiKey = process.env["GEMINI_API_KEY"];
 if (!apiKey) {
-  logger.fatal("No Gemini API key found in the env! Exiting...");
+  logger.fatal("No Gemini API key found in the env!");
 }
 
 // Initialize the client
@@ -195,4 +195,4 @@ export const generateTips = async (trip) => {
 
   const response = await query(prompt);
   return response.text;
-}
+};
