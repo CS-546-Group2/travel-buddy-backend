@@ -49,9 +49,6 @@ A comprehensive travel planning API with MongoDB integration, AI-powered feature
    PORT=3001
    NODE_ENV=development
    
-   # JWT Secret (for authentication)
-   JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
-   
    # CORS Origins
    ALLOWED_ORIGINS=http://localhost:8080,http://127.0.0.1:8080,http://localhost:3000
    ```
