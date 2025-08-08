@@ -1,9 +1,7 @@
+import './appConfig.js';  // dotenv config
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import connectDB from './config/database.js';
-
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -34,6 +32,10 @@ app.get('/api/ping', (req, res) => {
   console.log('✅ Ping received from frontend');
   res.json({ message: 'Backend is alive!' });
 });
+
+app.use(/(.*)/, (req, res) => {
+  res.status(404).json({error: "Not found!"});
+})
 
 // ✅ Route bindings
 app.use('/api/trips', tripRoutes);
