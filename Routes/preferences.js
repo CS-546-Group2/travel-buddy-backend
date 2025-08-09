@@ -1,22 +1,31 @@
+// Routes/preferences.js
 import express from 'express';
 import mongoose from 'mongoose';
 import User from '../models/User.js';
+import logger from '../utils/logger.js';
 
-console.log('✅ preferences.js is ACTIVELY running');
+logger.info('✅ preferences.js route loaded');
 
 const router = express.Router();
 
 router.post('/', async (req, res) => {
-  console.log('📥 POST /api/preferences');
-  console.log('🔥 RAW BODY:', req.body);
+  // never log raw secrets
+  const { hashedPassword, ...rest } = req.body || {};
+  const safeBody = {
+    ...rest,
+    ...(hashedPassword ? { hashedPassword: '***masked***' } : {})
+  };
 
+  logger.info('📥 POST /api/preferences', { body: safeBody });
+
+  // 1) pull fields safely
   const {
     _id,
     firstName,
     lastName,
     email,
     username,
-    hashedPassword,
+    hashedPassword: hpw,
     age,
     createdAt,
     travelPreferences = {}
@@ -29,14 +38,14 @@ router.post('/', async (req, res) => {
     interests
   } = travelPreferences;
 
-  // Check for missing fields
+  // 2) validate
   const missing = [];
   if (!_id || !mongoose.Types.ObjectId.isValid(_id)) missing.push('_id');
   if (!firstName) missing.push('firstName');
   if (!lastName) missing.push('lastName');
   if (!email) missing.push('email');
   if (!username) missing.push('username');
-  if (!hashedPassword) missing.push('hashedPassword');
+  if (!hpw) missing.push('hashedPassword');
   if (age === undefined || isNaN(Number(age))) missing.push('age');
   if (!createdAt) missing.push('createdAt');
   if (!budgetRange) missing.push('travelPreferences.budgetRange');
@@ -45,17 +54,17 @@ router.post('/', async (req, res) => {
   if (!Array.isArray(interests)) missing.push('travelPreferences.interests');
 
   if (missing.length > 0) {
-    console.log('❌ MISSING FIELDS:', missing);
+    logger.warn('⚠️ Missing required fields', { missing });
     return res.status(400).json({ error: 'Missing required fields', missing });
   }
 
-  // Prepare update payload
+  // 3) update payload
   const update = {
     firstName,
     lastName,
     email,
     username,
-    hashedPassword,
+    hashedPassword: hpw,
     age: Number(age),
     createdAt,
     travelPreferences: {
@@ -67,6 +76,7 @@ router.post('/', async (req, res) => {
     updatedAt: new Date()
   };
 
+  // 4) upsert
   try {
     const updatedUser = await User.findByIdAndUpdate(
       _id,
@@ -74,16 +84,16 @@ router.post('/', async (req, res) => {
       { new: true, upsert: true, runValidators: true }
     );
 
-    console.log('✅ Preferences updated for user:', updatedUser._id);
-
+    logger.info('✅ Preferences upserted', { userId: String(_id) });
     return res.status(200).json({
       message: 'User preferences saved successfully',
       data: updatedUser
     });
   } catch (err) {
-    console.error('❌ [Preferences Update] Error:', err);
+    logger.error('❌ [Preferences Update] Error', { error: err.message, stack: err.stack });
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
 
 export default router;
+
