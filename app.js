@@ -61,6 +61,3 @@ app.listen(PORT, () => {
   logger.info(`🚀 Backend listening on port ${PORT}`);
   logger.info(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
-
-export default app;
-
