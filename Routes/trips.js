@@ -370,7 +370,8 @@ router.post('/:tripId/generate-itinerary', async (req, res) => {
   // Generate AI itinerary
   try {
     logger.debug('Generating trip itinerary', {tripId: req.params.tripId});
-    const trip = await Trip.findById(req.params.tripId);
+    const tripId = req.params.tripId;
+    const trip = await Trip.findById(tripId);
     
     if (!trip || trip.isDeleted) {
       logger.warn('Trip not found', { tripId: req.params.tripId });
@@ -379,12 +380,11 @@ router.post('/:tripId/generate-itinerary', async (req, res) => {
 
     const itineraryJson = cleanAndParseJson(await generateItinerary(trip));
     trip.activities = itineraryJson;
-    await trip.save();
-
-    if (!trip || trip.isDeleted) {
-      logger.warn('Itinerary generation failed', { itineraryJson });
-      return res.status(500).json({ error: 'Itinerary generation failed' });
-    }
+    trip.aiGenerated.itineraryGenerated = true;
+    await Trip.findByIdAndUpdate(
+      tripId,
+      {activities: itineraryJson, aiGenerated: {itineraryGenerated: true}}
+    )
     
   } catch (error) {
     logger.error('Error generating itinerary', { 
@@ -401,7 +401,8 @@ router.post('/:tripId/generate-recommendations', async (req, res) => {
   // Generate AI recommendations
   try {
     logger.debug('Generating trip recommendations', {tripId: req.params.tripId});
-    const trip = await Trip.findById(req.params.tripId);
+    const tripId = req.params.tripId;
+    const trip = await Trip.findById(tripId);
 
     if (!trip || trip.isDeleted) {
       logger.warn('Trip not found', { tripId: req.params.tripId });
@@ -409,13 +410,10 @@ router.post('/:tripId/generate-recommendations', async (req, res) => {
     }
 
     const recsJson = cleanAndParseJson(await generateRecs(trip));
-    trip.recommendations = recsJson;
-    await trip.save();
-
-    if (!trip || trip.isDeleted) {
-      logger.warn('Recommendation generation failed', { recsJson });
-      return res.status(500).json({ error: 'Recommendation generation failed' });
-    }
+    await Trip.findByIdAndUpdate(
+      tripId,
+      {recommendations: recsJson, aiGenerated: {recommendationsGenerated: true}}
+    )
 
   } catch (error) {
     logger.error('Error generating recommendations', { 
@@ -433,7 +431,8 @@ router.post('/:tripId/generate-tips', async (req, res) => {
   // Generate travel tips
   try {
     logger.debug('Generating trip travel tips', {tripId: req.params.tripId});
-    const trip = await Trip.findById(req.params.tripId);
+    const tripId = req.params.tripId;
+    const trip = await Trip.findById(tripId);
 
     if (!trip || trip.isDeleted) {
       logger.warn('Trip not found', { tripId: req.params.tripId });
@@ -441,13 +440,10 @@ router.post('/:tripId/generate-tips', async (req, res) => {
     }
 
     const tipsJson = cleanAndParseJson(await generateTips(trip));
-    trip.travelTips = tipsJson;
-    await trip.save();
-
-    if (!trip || trip.isDeleted) {
-      logger.warn('Travel tip generation failed', { tipsJson });
-      return res.status(500).json({ error: 'Travel tip generation failed' });
-    }
+    await Trip.findByIdAndUpdate(
+      tripId,
+      {travelTips: tipsJson}
+    );
 
   } catch (error) {
     logger.error('Error generating travel tips', { 
