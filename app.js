@@ -16,9 +16,9 @@ import collabRoutes from './Routes/collaboration.js';
 
 // CORS configuration
 const corsOptions = {
-  origin: process.env.ALLOWED_ORIGINS 
-    ? process.env.ALLOWED_ORIGINS.split(',') 
-    : ['http://localhost:8080', 'http://localhost:3000'],
+  origin: process.env.ALLOWED_ORIGINS
+    ? (process.env.ALLOWED_ORIGINS === '*' ? '*' : process.env.ALLOWED_ORIGINS.split(','))
+    : ['http://localhost:8080', 'http://127.0.0.1:8080', 'http://localhost:3000'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
@@ -33,14 +33,15 @@ app.get('/api/ping', (req, res) => {
   res.json({ message: 'Backend is alive!' });
 });
 
-app.use(/(.*)/, (req, res) => {
-  res.status(404).json({error: "Not found!"});
-})
-
 // ✅ Route bindings
 app.use('/api/trips', tripRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/collaboration', collabRoutes);
+
+app.use(/(.*)/, (req, res) => {
+  res.status(404).json({error: "Not found!"});
+})
+
 
 // ✅ Server listener
 app.listen(PORT, () => {

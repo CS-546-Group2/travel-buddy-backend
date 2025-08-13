@@ -360,7 +360,7 @@ router.get('/stats/:userId', async (req, res) => {
   }
 });
 
-// TODO: AI Planning Endpoints
+// AI Planning Endpoints
 router.post('/:tripId/generate-itinerary', async (req, res) => {
   // Generate AI itinerary
   try {
