@@ -31,10 +31,8 @@ const query = async (message, webSearch = true) => {
 
     // Debug logging to understand the response structure
     logger.info("Gemini API result structure:", { 
-      hasResponse: !!result.response,
       hasCandidates: !!result.candidates,
-      resultKeys: Object.keys(result || {}),
-      responseKeys: result.response ? Object.keys(result.response) : null
+      resultKeys: Object.keys(result || {})
     });
 
     return result;
@@ -228,10 +226,10 @@ export const generateTips = async (trip) => {
     Your response must be completely in JSON and adhere to the following MongoDB Mongoose schema:
     ${responseSchema}
 
-    Notice how each tip needs to fit into one of the following cetegories, no others may be used:
-    ['cultural', 'transportation', 'safety', 'language', 'weather', 'money', 'food', 'customs']
+    Each tip must be assigned one of these categories, NO others are allowed:
+    'cultural', 'transportation', 'safety', 'language', 'weather', 'money', 'food', 'customs'
 
-    Generate as many travel tips as you think will be useful given the available categories above.
+    Generate 6-8 travel tips you think will be most useful.
 
     Important: Nothing except valid stringified JSON is allowed, as it will be fed directly into JSON.parse()
   `;
