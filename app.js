@@ -1,28 +1,25 @@
 import './appConfig.js';  // dotenv loads from here (imports are processed first)
 import express from 'express';
-import cors from 'cors';
+import dotenv from 'dotenv';
 import connectDB from './config/database.js';
 import logger from './utils/logger.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Initialize mongo
 connectDB();
 
-// Cors configuration
-const corsOptions = {
-  origin: process.env.ALLOWED_ORIGINS
-    ? (process.env.ALLOWED_ORIGINS === '*' ? '*' : process.env.ALLOWED_ORIGINS.split(','))
-    : ['http://localhost:8080', 'http://127.0.0.1:8080', 'http://localhost:3000'],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
-}
-
 // Middleware
-app.use(cors(corsOptions));
 app.use(express.json());
+
+// Serve the frontend statically so everything is same-origin (no CORS needed)
+const frontendDir = path.join(__dirname, '../travel-buddy-frontend');
+app.use(express.static(frontendDir));
 
 // Routes
 import tripRoutes from './Routes/trips.js';
@@ -37,14 +34,18 @@ app.get('/api/ping', (_req, res) => {
 });
 
 // Route bindings (MUST come before fallback route)
+
 app.use('/api/trips', tripRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/collaboration', collabRoutes);
 app.use('/api/preferences', preferenceRoutes);
 
-// Fallback unmatched route (MUST come after route bindings)
-app.use(/(.*)/, (req, res) => {
-  res.status(404).json({error: "Not found!"});
+// Fallback unmatched route (serve frontend for non-API paths)
+app.use((req, res) => {
+  if (!req.path.startsWith('/api')) {
+    return res.sendFile(path.join(frontendDir, 'index.html'));
+  }
+  res.status(404).json({ error: 'Not found!' });
 });
 
 // Global error handler
