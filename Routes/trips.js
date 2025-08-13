@@ -254,20 +254,48 @@ router.delete('/:tripId', async (req, res) => {
 router.get('/search/:query', async (req, res) => {
   try {
     const { query } = req.params;
+    const [textQuery, startRange, endRange] = query.split(';');
     const { userId } = req.query;
 
-    logger.debug('Searching trips', { 
-      query,
+    logger.info('Searching trips', { 
+      textQuery,
+      startRange, 
+      endRange,
       userId 
     });
 
+    const start = new Date(startRange);
+    const end = new Date(endRange);
+
+    if (end) {
+      if (start >= end) {
+        logger.error("Trip query failed - invalid date range", {
+          startRange,
+          endRange,
+        });
+      }
+    }
+
     let searchQuery = {
       isDeleted: false,
-      $or: [
-        { tripName: { $regex: query, $options: 'i' } },
-        { destination: { $regex: query, $options: 'i' } }
-      ]
+      ...(textQuery && textQuery.trim() !== '' && {
+        $or: [
+          { tripName: { $regex: textQuery, $options: 'i' } },
+          { destination: { $regex: textQuery, $options: 'i' } },
+        ],
+      }),
     };
+
+    if (startRange && endRange) {
+      searchQuery.startDate = { $lte: end };
+      searchQuery.endDate = { $gte: start };
+    } else if (startRange && !endRange) {
+      searchQuery.startDate = { $gte: start };
+    } else if (!startRange && endRange) {
+      const nextDay = end
+      nextDay.setDate(nextDay.getDate() + 1);
+      searchQuery.endDate = { $lte: nextDay };
+    }
 
     if (userId) {
       searchQuery.userId = userId;
