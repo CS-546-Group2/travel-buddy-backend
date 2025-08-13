@@ -361,6 +361,11 @@ router.get('/stats/:userId', async (req, res) => {
 });
 
 // AI Planning Endpoints
+const cleanAndParseJson = (jsonString) => {
+  const cleanedString = jsonString.replace(/```json\n/g, '').replace(/```/g, '');
+  return JSON.parse(cleanedString);
+}
+
 router.post('/:tripId/generate-itinerary', async (req, res) => {
   // Generate AI itinerary
   try {
@@ -372,11 +377,11 @@ router.post('/:tripId/generate-itinerary', async (req, res) => {
       return res.status(404).json({ error: 'Trip not found' });
     }
 
-    const itineraryJson = JSON.parse(generateItinerary(trip));
+    const itineraryJson = cleanAndParseJson(await generateItinerary(trip));
     trip.activities = itineraryJson;
     await trip.save();
 
-    if (!updatedTrip || updatedTrip.isDeleted) {
+    if (!trip || trip.isDeleted) {
       logger.warn('Itinerary generation failed', { itineraryJson });
       return res.status(500).json({ error: 'Itinerary generation failed' });
     }
@@ -403,12 +408,12 @@ router.post('/:tripId/generate-recommendations', async (req, res) => {
       return res.status(404).json({ error: 'Trip not found' });
     }
 
-    const recsJson = JSON.parse(generateRecs(trip));
+    const recsJson = cleanAndParseJson(await generateRecs(trip));
     trip.recommendations = recsJson;
     await trip.save();
 
-    if (!updatedTrip || updatedTrip.isDeleted) {
-      logger.warn('Recommendation generation failed', { itineraryJson });
+    if (!trip || trip.isDeleted) {
+      logger.warn('Recommendation generation failed', { recsJson });
       return res.status(500).json({ error: 'Recommendation generation failed' });
     }
 
@@ -435,12 +440,12 @@ router.post('/:tripId/generate-tips', async (req, res) => {
       return res.status(404).json({ error: 'Trip not found' });
     }
 
-    const tipsJson = JSON.parse(generateTips(trip));
-    trip.recommendations = tipsJson;
+    const tipsJson = cleanAndParseJson(await generateTips(trip));
+    trip.travelTips = tipsJson;
     await trip.save();
 
-    if (!updatedTrip || updatedTrip.isDeleted) {
-      logger.warn('Travel tip generation failed', { itineraryJson });
+    if (!trip || trip.isDeleted) {
+      logger.warn('Travel tip generation failed', { tipsJson });
       return res.status(500).json({ error: 'Travel tip generation failed' });
     }
 
@@ -455,5 +460,6 @@ router.post('/:tripId/generate-tips', async (req, res) => {
 
   }
 });
+
 
 export default router;

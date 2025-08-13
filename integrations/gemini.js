@@ -22,13 +22,54 @@ const webConfig = {
 };
 
 const query = async (message, webSearch = true) => {
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-pro",
-    contents: message,
-    ...(webSearch && { webConfig }),
-  });
+  try {
+    const result = await ai.models.generateContent({
+      model: "gemini-2.5-pro",
+      contents: message,
+      ...(webSearch && { webConfig }),
+    });
 
-  return response;
+    // Debug logging to understand the response structure
+    logger.info("Gemini API result structure:", { 
+      hasResponse: !!result.response,
+      hasCandidates: !!result.candidates,
+      resultKeys: Object.keys(result || {}),
+      responseKeys: result.response ? Object.keys(result.response) : null
+    });
+
+    return result;
+  } catch (error) {
+    logger.error("Error in Gemini API query:", { error: error.message, stack: error.stack });
+    throw error;
+  }
+};
+
+// Helper function to extract text from Gemini response
+const extractTextFromResponse = (result, functionName) => {
+  let responseText = null;
+  
+  if (result.response && result.response.text) {
+    responseText = result.response.text();
+  } else if (result.candidates && result.candidates[0] && result.candidates[0].content) {
+    responseText = result.candidates[0].content.parts[0].text;
+  } else if (result.text) {
+    responseText = result.text();
+  } else {
+    logger.error(`Unable to extract text from Gemini response in ${functionName}`, { 
+      resultStructure: Object.keys(result),
+      hasResponse: !!result.response,
+      hasCandidates: !!result.candidates,
+      candidatesLength: result.candidates ? result.candidates.length : 0
+    });
+    throw new Error("Invalid response structure from Gemini API");
+  }
+  
+  if (!responseText || responseText.trim() === '') {
+    logger.error(`Empty response from Gemini API in ${functionName}`);
+    throw new Error("Empty response from Gemini API");
+  }
+  
+  return responseText;
 };
 
 export const generateItinerary = async (trip) => {
@@ -53,7 +94,6 @@ export const generateItinerary = async (trip) => {
       },
       type: {
         type: String,
-        enum: ['sightseeing', 'food', 'logistics', 'cultural', 'adventure', 'relaxation', 'transport'],
         required: true
       },
       description: String,
@@ -91,11 +131,11 @@ export const generateItinerary = async (trip) => {
 
     Generate an entry for each day in the trip, consider both arrival time and depature time.
 
-    Important: Nothing except valid stringified JSON is allowed, as it will be fed directly into JSON.parse()
+    Important: Nothing except valid stringified JSON is allowed, as it will be fed directly into JSON.parse().
   `;
 
-  const response = await query(prompt);
-  return response.text;
+  const result = await query(prompt);
+  return extractTextFromResponse(result, 'generateItinerary');
 };
 
 export const generateRecs = async (trip) => {
@@ -150,8 +190,8 @@ export const generateRecs = async (trip) => {
     Important: Nothing except valid stringified JSON is allowed, as it will be fed directly into JSON.parse()
   `;
 
-  const response = await query(prompt);
-  return response.text;
+  const result = await query(prompt);
+  return extractTextFromResponse(result, 'generateRecs');
 };
 
 export const generateTips = async (trip) => {
@@ -188,11 +228,14 @@ export const generateTips = async (trip) => {
     Your response must be completely in JSON and adhere to the following MongoDB Mongoose schema:
     ${responseSchema}
 
+    Notice how each tip needs to fit into one of the following cetegories, no others may be used:
+    ['cultural', 'transportation', 'safety', 'language', 'weather', 'money', 'food', 'customs']
+
     Generate as many travel tips as you think will be useful given the available categories above.
 
     Important: Nothing except valid stringified JSON is allowed, as it will be fed directly into JSON.parse()
   `;
 
-  const response = await query(prompt);
-  return response.text;
+  const result = await query(prompt);
+  return extractTextFromResponse(result, 'generateTips');
 };
