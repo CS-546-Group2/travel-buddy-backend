@@ -379,12 +379,14 @@ router.post('/:tripId/generate-itinerary', async (req, res) => {
     }
 
     const itineraryJson = cleanAndParseJson(await generateItinerary(trip));
-    trip.activities = itineraryJson;
-    trip.aiGenerated.itineraryGenerated = true;
     await Trip.findByIdAndUpdate(
       tripId,
-      {activities: itineraryJson, aiGenerated: {itineraryGenerated: true}}
-    )
+      {
+        activities: itineraryJson, 
+        $set: { "aiGenerated.itineraryGenerated": true }}
+    );
+
+    res.status(200).json(itineraryJson);
     
   } catch (error) {
     logger.error('Error generating itinerary', { 
@@ -412,8 +414,12 @@ router.post('/:tripId/generate-recommendations', async (req, res) => {
     const recsJson = cleanAndParseJson(await generateRecs(trip));
     await Trip.findByIdAndUpdate(
       tripId,
-      {recommendations: recsJson, aiGenerated: {recommendationsGenerated: true}}
-    )
+      {
+        recommendations: recsJson, 
+        $set: { "aiGenerated.recommendationsGenerated": true }}
+    );
+
+    res.status(200).json(recsJson);
 
   } catch (error) {
     logger.error('Error generating recommendations', { 
@@ -444,6 +450,8 @@ router.post('/:tripId/generate-tips', async (req, res) => {
       tripId,
       {travelTips: tipsJson}
     );
+
+    res.status(200).json(tipsJson);
 
   } catch (error) {
     logger.error('Error generating travel tips', { 
