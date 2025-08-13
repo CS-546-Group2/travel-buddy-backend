@@ -20,7 +20,6 @@ const activitySchema = new mongoose.Schema({
     },
     type: {
       type: String,
-      enum: ['sightseeing', 'food', 'logistics', 'cultural', 'adventure', 'relaxation', 'transport'],
       required: true
     },
     description: String,
