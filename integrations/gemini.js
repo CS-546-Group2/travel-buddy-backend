@@ -183,7 +183,7 @@ export const generateRecs = async (trip) => {
     Your response must be completely in JSON and adhere to the following MongoDB Mongoose schema:
     ${responseSchema}
     
-    Generate 3-5 items for each recommendation category.
+    Generate 4-5 items for each recommendation category.
 
     Important: Nothing except valid stringified JSON is allowed, as it will be fed directly into JSON.parse()
   `;
