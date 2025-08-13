@@ -1,31 +1,27 @@
 import express from 'express';
-import cors from 'cors';
 import dotenv from 'dotenv';
 import connectDB from './config/database.js';
 import logger from './utils/logger.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 // Load env
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Initialize mongo
 connectDB();
 
-// Cors configuration
-const corsOptions = {
-  origin: process.env.ALLOWED_ORIGINS
-    ? process.env.ALLOWED_ORIGINS.split(',')
-    : ['http://localhost:8080', 'http://localhost:3000', 'http://127.0.0.1:5500'],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
-}
-
 // Middleware
-app.use(cors(corsOptions));
 app.use(express.json());
+
+// Serve the frontend statically so everything is same-origin (no CORS needed)
+const frontendDir = path.join(__dirname, '../travel-buddy-frontend');
+app.use(express.static(frontendDir));
 
 // Routes
 import tripRoutes from './Routes/trips.js';
@@ -39,16 +35,19 @@ app.get('/api/ping', (_req, res) => {
   res.json({ message: 'Backend is alive!' });
 });
 
-// Fallback unmatched route
-app.use(/(.*)/, (req, res) => {
-  res.status(404).json({error: "Not found!"});
-})
-
 // Route bindings
 app.use('/api/trips', tripRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/collaboration', collabRoutes);
 app.use('/api/preferences', preferenceRoutes);
+
+// Fallback unmatched route (serve frontend for non-API paths)
+app.use((req, res) => {
+  if (!req.path.startsWith('/api')) {
+    return res.sendFile(path.join(frontendDir, 'index.html'));
+  }
+  res.status(404).json({ error: 'Not found!' });
+});
 
 // Global error handler
 app.use((err, _req, res, _next) => {
