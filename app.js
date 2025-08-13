@@ -1,6 +1,5 @@
 import './appConfig.js';  // dotenv loads from here (imports are processed first)
 import express from 'express';
-import dotenv from 'dotenv';
 import connectDB from './config/database.js';
 import logger from './utils/logger.js';
 import path from 'path';
