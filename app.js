@@ -36,26 +36,22 @@ app.get('/api/ping', (_req, res) => {
   res.json({ message: 'Backend is alive!' });
 });
 
-// Fallback unmatched route
-app.use(/(.*)/, (req, res) => {
-  res.status(404).json({error: "Not found!"});
-})
-
-// Route bindings
+// Route bindings (MUST come before fallback route)
 app.use('/api/trips', tripRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/collaboration', collabRoutes);
 app.use('/api/preferences', preferenceRoutes);
+
+// Fallback unmatched route (MUST come after route bindings)
+app.use(/(.*)/, (req, res) => {
+  res.status(404).json({error: "Not found!"});
+});
 
 // Global error handler
 app.use((err, _req, res, _next) => {
   logger.error('❌ Global error', { error: err.message, stack: err.stack });
   res.status(500).json({ error: 'Internal server error' });
 });
-
-app.use(/(.*)/, (req, res) => {
-  res.status(404).json({error: "Not found!"});
-})
 
 // Start the server
 app.listen(PORT, () => {
