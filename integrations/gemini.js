@@ -27,17 +27,20 @@ const query = async (message) => {
     const result = await ai.models.generateContent({
       model: "gemini-2.5-pro",
       contents: message,
-      config
+      config,
     });
 
     // Debug logging to understand the response structure
-    logger.info("Gemini API result structure:", { 
-      resultKeys: Object.keys(result || {})
+    logger.info("Gemini API result structure:", {
+      resultKeys: Object.keys(result || {}),
     });
 
     return result;
   } catch (error) {
-    logger.error("Error in Gemini API query:", { error: error.message, stack: error.stack });
+    logger.error("Error in Gemini API query:", {
+      error: error.message,
+      stack: error.stack,
+    });
     throw error;
   }
 };
@@ -46,28 +49,21 @@ const query = async (message) => {
 const extractTextFromResponse = (result, functionName) => {
   try {
     let responseText = result.text;
-    // if (result.response && result.response.text) {
-    //   responseText = result.response.text();
-    // } else if (result.candidates && result.candidates[0] && result.candidates[0].content) {
-    //   responseText = result.candidates[0].content.parts[0].text;
-    // } else if (result.text) {
-    //   responseText = result.text();
-    // } else {
-    //   throw new Error("Invalid response structure from Gemini API");
-    // }
-    
-    if (!responseText || responseText.trim() === '') {
+
+    if (!responseText || responseText.trim() === "") {
       logger.error(`Empty response from Gemini API in ${functionName}`);
       throw new Error("Empty response from Gemini API");
     }
-    
+
     return responseText;
-    
   } catch (error) {
-    logger.error(`Unable to extract text from Gemini response in ${functionName}`, { 
-      errorMsg: error.message,
-      fullResult: JSON.stringify(result, null, 2)
-    });
+    logger.error(
+      `Unable to extract text from Gemini response in ${functionName}`,
+      {
+        errorMsg: error.message,
+        fullResult: JSON.stringify(result, null, 2),
+      }
+    );
   }
 };
 
@@ -136,7 +132,7 @@ export const generateItinerary = async (trip) => {
   `;
 
   const result = await query(prompt);
-  return extractTextFromResponse(result, 'generateItinerary');
+  return extractTextFromResponse(result, "generateItinerary");
 };
 
 export const generateRecs = async (trip) => {
@@ -192,7 +188,7 @@ export const generateRecs = async (trip) => {
   `;
 
   const result = await query(prompt);
-  return extractTextFromResponse(result, 'generateRecs');
+  return extractTextFromResponse(result, "generateRecs");
 };
 
 export const generateTips = async (trip) => {
@@ -238,5 +234,5 @@ export const generateTips = async (trip) => {
   `;
 
   const result = await query(prompt);
-  return extractTextFromResponse(result, 'generateTips');
+  return extractTextFromResponse(result, "generateTips");
 };
