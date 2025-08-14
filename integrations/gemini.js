@@ -54,10 +54,7 @@ const extractTextFromResponse = (result, functionName) => {
     responseText = result.text();
   } else {
     logger.error(`Unable to extract text from Gemini response in ${functionName}`, { 
-      resultStructure: Object.keys(result),
-      hasResponse: !!result.response,
-      hasCandidates: !!result.candidates,
-      candidatesLength: result.candidates ? result.candidates.length : 0
+      fullResult: JSON.stringify(result)
     });
     throw new Error("Invalid response structure from Gemini API");
   }
@@ -123,6 +120,8 @@ export const generateItinerary = async (trip) => {
     - Interests: ${trip.preferences.interests.toString()}
     - Budget range: ${trip.preferences.budgetRange}
     - Preferred accommodation: ${trip.preferences.accommodationStyle}
+    - Generated travel tips: ${JSON.stringify(trip.travelTips)}
+    - Generated recommendations: ${JSON.stringify(trip.recommendations)}
 
     Your response must be completely in JSON and adhere to the following MongoDB Mongoose schema:
     ${responseSchema}
