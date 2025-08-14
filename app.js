@@ -1,12 +1,9 @@
+import './appConfig.js';  // dotenv loads from here (imports are processed first)
 import express from 'express';
-import dotenv from 'dotenv';
 import connectDB from './config/database.js';
 import logger from './utils/logger.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
-
-// Load env
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -35,7 +32,8 @@ app.get('/api/ping', (_req, res) => {
   res.json({ message: 'Backend is alive!' });
 });
 
-// Route bindings
+// Route bindings (MUST come before fallback route)
+
 app.use('/api/trips', tripRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/collaboration', collabRoutes);

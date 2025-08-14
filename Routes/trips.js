@@ -2,6 +2,7 @@ import express from 'express';
 import Trip from '../models/Trip.js';
 import User from '../models/User.js';
 import logger from '../utils/logger.js';
+import { generateItinerary, generateRecs, generateTips } from '../integrations/gemini.js';
 
 const router = express.Router();
 
@@ -387,17 +388,110 @@ router.get('/stats/:userId', async (req, res) => {
   }
 });
 
-// TODO: AI Planning Endpoints
-// router.post('/:tripId/generate-itinerary', async (req, res) => {
-//   // Generate AI itinerary
-// });
+// AI Planning Endpoints
+const cleanAndParseJson = (jsonString) => {
+  const cleanedString = jsonString.replace(/```json\n/g, '').replace(/```/g, '');
+  return JSON.parse(cleanedString);
+}
 
-// router.post('/:tripId/generate-recommendations', async (req, res) => {
-//   // Generate AI recommendations
-// });
+router.post('/:tripId/generate-itinerary', async (req, res) => {
+  // Generate AI itinerary
+  try {
+    logger.debug('Generating trip itinerary', {tripId: req.params.tripId});
+    const tripId = req.params.tripId;
+    const trip = await Trip.findById(tripId);
+    
+    if (!trip || trip.isDeleted) {
+      logger.warn('Trip not found', { tripId: req.params.tripId });
+      return res.status(404).json({ error: 'Trip not found' });
+    }
 
-// router.post('/:tripId/generate-tips', async (req, res) => {
-//   // Generate travel tips
-// });
+    const itineraryJson = cleanAndParseJson(await generateItinerary(trip));
+    await Trip.findByIdAndUpdate(
+      tripId,
+      {
+        activities: itineraryJson, 
+        $set: { "aiGenerated.itineraryGenerated": true }}
+    );
+
+    res.status(200).json(itineraryJson);
+    
+  } catch (error) {
+    logger.error('Error generating itinerary', { 
+      tripId: req.params.tripId,
+      error: error.message,
+      stack: error.stack
+    });
+
+    res.status(500).json({ error: 'Content-Generation error' });
+  }
+});
+
+router.post('/:tripId/generate-recommendations', async (req, res) => {
+  // Generate AI recommendations
+  try {
+    logger.debug('Generating trip recommendations', {tripId: req.params.tripId});
+    const tripId = req.params.tripId;
+    const trip = await Trip.findById(tripId);
+
+    if (!trip || trip.isDeleted) {
+      logger.warn('Trip not found', { tripId: req.params.tripId });
+      return res.status(404).json({ error: 'Trip not found' });
+    }
+
+    const recsJson = cleanAndParseJson(await generateRecs(trip));
+    await Trip.findByIdAndUpdate(
+      tripId,
+      {
+        recommendations: recsJson, 
+        $set: { "aiGenerated.recommendationsGenerated": true }}
+    );
+
+    res.status(200).json(recsJson);
+
+  } catch (error) {
+    logger.error('Error generating recommendations', { 
+      tripId: req.params.tripId,
+      error: error.message,
+      stack: error.stack
+    });
+
+    res.status(500).json({ error: 'Content-Generation error' });
+
+  }
+});
+
+router.post('/:tripId/generate-tips', async (req, res) => {
+  // Generate travel tips
+  try {
+    logger.debug('Generating trip travel tips', {tripId: req.params.tripId});
+    const tripId = req.params.tripId;
+    const trip = await Trip.findById(tripId);
+
+    if (!trip || trip.isDeleted) {
+      logger.warn('Trip not found', { tripId: req.params.tripId });
+      return res.status(404).json({ error: 'Trip not found' });
+    }
+
+    const tipsJson = cleanAndParseJson(await generateTips(trip));
+    await Trip.findByIdAndUpdate(
+      tripId,
+      {travelTips: tipsJson}
+    );
+
+    res.status(200).json(tipsJson);
+
+  } catch (error) {
+    logger.error('Error generating travel tips', { 
+      tripId: req.params.tripId,
+      error: error.message,
+      stack: error.stack
+    });
+
+    res.status(500).json({ error: 'Content-Generation error' });
+
+  }
+});
+
 
 export default router;
