@@ -17,21 +17,21 @@ const groundingTool = {
   googleSearch: {},
 };
 
-const webConfig = {
+// Configure generation settings, including the tool
+const config = {
   tools: [groundingTool],
 };
 
-const query = async (message, webSearch = true) => {
+const query = async (message) => {
   try {
     const result = await ai.models.generateContent({
       model: "gemini-2.5-pro",
       contents: message,
-      ...(webSearch && { webConfig }),
+      config
     });
 
     // Debug logging to understand the response structure
     logger.info("Gemini API result structure:", { 
-      hasCandidates: !!result.candidates,
       resultKeys: Object.keys(result || {})
     });
 
@@ -44,17 +44,17 @@ const query = async (message, webSearch = true) => {
 
 // Helper function to extract text from Gemini response
 const extractTextFromResponse = (result, functionName) => {
-  let responseText = null;
   try {
-    if (result.response && result.response.text) {
-      responseText = result.response.text();
-    } else if (result.candidates && result.candidates[0] && result.candidates[0].content) {
-      responseText = result.candidates[0].content.parts[0].text;
-    } else if (result.text) {
-      responseText = result.text();
-    } else {
-      throw new Error("Invalid response structure from Gemini API");
-    }
+    let responseText = result.text;
+    // if (result.response && result.response.text) {
+    //   responseText = result.response.text();
+    // } else if (result.candidates && result.candidates[0] && result.candidates[0].content) {
+    //   responseText = result.candidates[0].content.parts[0].text;
+    // } else if (result.text) {
+    //   responseText = result.text();
+    // } else {
+    //   throw new Error("Invalid response structure from Gemini API");
+    // }
     
     if (!responseText || responseText.trim() === '') {
       logger.error(`Empty response from Gemini API in ${functionName}`);
