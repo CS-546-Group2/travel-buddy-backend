@@ -62,7 +62,7 @@ const extractTextFromResponse = (result, functionName) => {
       {
         errorMsg: error.message,
         fullResult: JSON.stringify(result, null, 2),
-      }
+      },
     );
   }
 };
