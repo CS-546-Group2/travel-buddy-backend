@@ -17,54 +17,54 @@ const groundingTool = {
   googleSearch: {},
 };
 
-const webConfig = {
+// Configure generation settings, including the tool
+const config = {
   tools: [groundingTool],
 };
 
-const query = async (message, webSearch = true) => {
+const query = async (message) => {
   try {
     const result = await ai.models.generateContent({
       model: "gemini-2.5-pro",
       contents: message,
-      ...(webSearch && { webConfig }),
+      config,
     });
 
     // Debug logging to understand the response structure
-    logger.info("Gemini API result structure:", { 
-      hasCandidates: !!result.candidates,
-      resultKeys: Object.keys(result || {})
+    logger.info("Gemini API result structure:", {
+      resultKeys: Object.keys(result || {}),
     });
 
     return result;
   } catch (error) {
-    logger.error("Error in Gemini API query:", { error: error.message, stack: error.stack });
+    logger.error("Error in Gemini API query:", {
+      error: error.message,
+      stack: error.stack,
+    });
     throw error;
   }
 };
 
 // Helper function to extract text from Gemini response
 const extractTextFromResponse = (result, functionName) => {
-  let responseText = null;
-  
-  if (result.response && result.response.text) {
-    responseText = result.response.text();
-  } else if (result.candidates && result.candidates[0] && result.candidates[0].content) {
-    responseText = result.candidates[0].content.parts[0].text;
-  } else if (result.text) {
-    responseText = result.text();
-  } else {
-    logger.error(`Unable to extract text from Gemini response in ${functionName}`, { 
-      fullResult: JSON.stringify(result)
-    });
-    throw new Error("Invalid response structure from Gemini API");
+  try {
+    let responseText = result.text;
+
+    if (!responseText || responseText.trim() === "") {
+      logger.error(`Empty response from Gemini API in ${functionName}`);
+      throw new Error("Empty response from Gemini API");
+    }
+
+    return responseText;
+  } catch (error) {
+    logger.error(
+      `Unable to extract text from Gemini response in ${functionName}`,
+      {
+        errorMsg: error.message,
+        fullResult: JSON.stringify(result, null, 2),
+      },
+    );
   }
-  
-  if (!responseText || responseText.trim() === '') {
-    logger.error(`Empty response from Gemini API in ${functionName}`);
-    throw new Error("Empty response from Gemini API");
-  }
-  
-  return responseText;
 };
 
 export const generateItinerary = async (trip) => {
@@ -128,11 +128,11 @@ export const generateItinerary = async (trip) => {
 
     Generate an entry for each day in the trip, consider both arrival time and depature time.
 
-    Important: Nothing except valid stringified JSON is allowed, as it will be fed directly into JSON.parse().
+    Important: Include nothing in the output except valid JSON, ensure it STRICTLY adheres to the given schema.
   `;
 
   const result = await query(prompt);
-  return extractTextFromResponse(result, 'generateItinerary');
+  return extractTextFromResponse(result, "generateItinerary");
 };
 
 export const generateRecs = async (trip) => {
@@ -182,13 +182,13 @@ export const generateRecs = async (trip) => {
     Your response must be completely in JSON and adhere to the following MongoDB Mongoose schema:
     ${responseSchema}
     
-    Generate 4-5 items for each recommendation category.
+    Generate 3-5 items for each recommendation category.
 
-    Important: Nothing except valid stringified JSON is allowed, as it will be fed directly into JSON.parse()
+    Important: Include nothing in the output except valid JSON, ensure it STRICTLY adheres to the given schema.
   `;
 
   const result = await query(prompt);
-  return extractTextFromResponse(result, 'generateRecs');
+  return extractTextFromResponse(result, "generateRecs");
 };
 
 export const generateTips = async (trip) => {
@@ -228,11 +228,11 @@ export const generateTips = async (trip) => {
     Each tip must be assigned one of these categories, NO others are allowed:
     'cultural', 'transportation', 'safety', 'language', 'weather', 'money', 'food', 'customs'
 
-    Generate 6-8 travel tips you think will be most useful.
+    Generate 5-7 travel tips you think will be most useful.
 
-    Important: Nothing except valid stringified JSON is allowed, as it will be fed directly into JSON.parse()
+    Important: Include nothing in the output except valid JSON, ensure it STRICTLY adheres to the given schema.
   `;
 
   const result = await query(prompt);
-  return extractTextFromResponse(result, 'generateTips');
+  return extractTextFromResponse(result, "generateTips");
 };
